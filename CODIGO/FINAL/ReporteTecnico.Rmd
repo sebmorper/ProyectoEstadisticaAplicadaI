@@ -1,0 +1,727 @@
+---
+title: "Diabetes Melitus Tipo II"
+author: "Sebastian Morales Peralta 000124317"
+date: "27 de marzo de 2015"
+output: pdf_document
+---
+
+```{r Paquetes, echo=FALSE, results='hide'}
+paquetes.utilizados <- c("ggplot2")
+paquetes.instalados <- rownames(installed.packages())
+paquetes.por.instalar <- setdiff(paquetes.utilizados, paquetes.instalados)
+
+if (length(paquetes.por.instalar) != 0 ) install.packages(paquetes.por.instalar, 
+                                                          repos = "http://cran.us.r-project.org")
+# Carga los paquetes a utilizar.
+lapply(paquetes.utilizados, library, character.only = TRUE)
+```
+
+
+```{r ImportarDatos, echo=FALSE}
+directorio <- c("/Users/carmorsa/Desktop/PROYECTO")
+setwd(directorio)
+setwd("./DATOS/PROCESADOS")
+
+fuente <- read.csv("Fuente.csv", sep = ",")
+mes <- read.csv("Mes.csv", sep = ",")
+edad <- read.csv("Edad.csv", sep = ",")
+
+fuente <- fuente[,2:6]
+mes <- mes[,2:6]
+edad <- edad[,2:6]
+
+```
+
+### REPORTE TECNICO  
+
+#### I. Introduccion 
+#####  
+Este reporte busca presentar, de forma general, el fenomoeno de la Diabetes melitus tipo II (no insulinodependiente) en Mexico. Los datos contenidos abarcan el periodo 2003 a 2013 y son publicados por la Secretaria de Salud en la pagina:  
+http://www.epidemiologia.salud.gob.mx/anuario/html/anuarios.html  
+
+En esta seccion se encuentra una breve descripcion de los datos para pasar, mas adelate, a la definicion del problema.  
+  
+La base de datos esta compuesta por 3 tablas principales, presentadas a continuacion, describen los casos de diabetes reportados de 2003 a 2013. La informacion esta distribuida en dos generos sexuales (masculino y femenino) en las 32 entidades del pais.  
+
+FUENTE.  
+Informacion dividida por las distintas instituciones que reportaron los casos de diabetes.
+```{r PresentarFuente, echo=FALSE}
+head(fuente)
+unique(as.character(fuente$fuente))
+```
+  
+MES.  
+La informacion se encuantra dividida por cada mes del anio.
+```{r PresentarMes, echo=FALSE}
+head(mes)
+```
+  
+EDAD.  
+Presenta los casos de diabetes reportados en los distintos grupos de edad, donde ign se refiere a aquellos individuos que no fueron clasifiados en un grupo de edad.
+```{r PresentarEdad, echo=FALSE}
+head(edad)
+unique(as.character(edad$edad))
+```
+
+Nota: se omitieron la mayoria de los acentos en el presente reporte, debido a que eran cambiados por "??" automaticamente por el sistema.    
+
+#### II. Definicion del Problema.  
+####  
+El principal objetivo de este reporte es presentar el fenomeno de la diabetes melitus tipo II en Mexico, por lo cual iniciaremos haciendo las preguntas mas generales, hasta llegar a responder las preguntas mas especificas que nuestros datos nos permitan.  
+
+1. Es importante conocer como se distribuyen todos nuestros casos reportados de diabetes entre hombres y mujeres de la poblacion.
+2. Cual es el estado de la republica que presenta mayores casos de diabetes en Mexico; asi como aquel estado que presenta los menores casos.
+3. Presentar la tendencia, a lo largo del tiempo, de los casos reportados en el periodo 2003 - 2013, ??es creciente o decreciente?
+4. ??En que anio se reporto el mayor y menor numero de casos de diabetes en Mexico?
+5. ??Cual es el comportamiento, de los casos reportados, en las distintas edades de la poblacion? ??En que grupo de edad se encuentra el mayor numero de casos de diabetes?  
+6.??Cuales son las instituciones en la republica donde se han reportado el mayor y menor numero de casos?
+7. ??Como es el comportamiento mensual de los casos reportados? ??Existe algun tipo de estacionalidad?
+8. Cual es el comportamiento de los casos en hombre y mujeres a lo largo del tiempo y en cada uno de los estados de la republica?
+9. Cual es el comportamiento de los distintos grupos de edad a lo largo del tiempo y en cada una de las entidades del pais?  
+
+Cada una de estas preguntas ser respondida mediante un analisis exploratorio, el cual nos permita entender el comportamiento de los casos de diabetes en la poblacion mexicana a lo largo del tiempo, por lo que se incluiran datos de promedios y varianzas para comenzar a  "visualizar" que tan solido sera el analisis en la etapa inferencial (no presentada en el actual reporte).  
+
+
+#### III. Obtencion y Descripcion de los Datos.  
+####  
+Una base de datos "ideal" que podria responder todas las preguntas de manera puntual seria aquella que contuviera los siguientes campos o variables:
+```{r BaseIdeal, echo=FALSE}
+c("estado", "genero", "fecha", "mes", "fuente", "edad", "casos")
+```
+En la cual, las variables serian de los siguientes tipos y escalas:  
+ESTADO.  
+Esta variable es de tipo categorica y da cuenta de cada uno de los estados de la republica mexicana.
+```{r Estados, echo=FALSE}
+unique(as.character(fuente$estado))
+```
+GENERO.  
+El sexo de de los individuos reportados con diabetes melitus tipo II. Es una variable categorica.
+```{r Genero, echo=FALSE}
+unique(as.character(fuente$genero))
+```
+FECHA.  
+Se refiere al anio en el que se presentaron los casos de diabetes, es una variable numerica, de tipo entero, que se encuantra entre los rangos 2003 y 2013.
+```{r Fecha, echo=FALSE}
+unique(fuente$fecha)
+```
+MES.  
+El mes del anio en el que se reportaron los casos, es una variable de tipo caracter que contiene cada uno de los meses del anio.
+```{r Mes, echo=FALSE}
+unique(as.character(mes$mes))
+```
+FUENTE.  
+Es una variable categorica que permite saber el numero de casos reportados por algunas instituciones del pais.
+```{r Fuente, echo=FALSE}
+unique(as.character(fuente$fuente))
+```
+EDAD.  
+Variable categorica que agrupa distintos rangos de edades que presentan casos de diabetes. En este caso, la categoria "ign" se refiere a todas aquellas personas que no fueron asignadas a algun grupo de edad.
+```{r Edad, echo=FALSE}
+unique(as.character(edad$edad))
+```
+CASOS.  
+Es la variable dependiente, es de tipo numerica y se refiere al numero de personas que reflejan un caso de diabetes melitus tipo II (no insulinodependiente). Para este reporte, la variable se encuentra en los siguentes rangos:
+```{r MaxMinCasos, echo=FALSE}
+max <- max(fuente$casos, mes$casos, edad$casos)
+min <- min(fuente$casos)
+casosMaxMin <- data.frame(min, max)
+row.names(casosMaxMin) <- c("casos")
+casosMaxMin
+```
+Este reporte contiene todas estas variables, sin embargo, no se tienen integradas en una sola base de datos, por lo que no es posible dar respuestas tan especificas como por ejemplo:  
+Cuantos casos de hombres con diabetes se reportaron en abril de 2008 en el issste en Durango?  
+Ya que la informacion actual puede dar cuenta de los hombres reportados en abril de 2008 y los hombres reportados en el 2008 por parte del issste pero a lo largo de todo el anio.  
+ej.
+```{r Ejemplo1, echo=FALSE}
+subset(mes, genero == "Hombres" & fecha == 2008 & mes == "abr" & estado == "Durango")
+
+subset(fuente, genero == "Hombres" & fecha == 2008 & fuente == "issste" & estado == "Durango")
+```
+Por lo tanto, utilizaremos las tres bases por separado (fuente, mes, edad) para responder de las preguntas mas generales hasta la mas particular que sea posible.  
+
+
+#### IV Calidad de los Datos.  
+####  
+En esta seccion se mostrara la calidad de los datos presentados, es decir, que los datos de cada una de nuestras tablas (fuente, mes, edad) sean los mismos para cada anio, genero, y estado. Esto con el fin de corrobrar que los datos que estamos utilizando coinciden, independientemente de la tabla que estemos utilizando, lo cual nos permite tener solidez en el analisis comparativo.  
+
+Primero mostraremos que, para cada tabla, los datos son los mismos para cada anio y cada genero.  
+Por fuente.  
+```{r TablaFuenteFecha, echo=FALSE}
+General <- NULL
+Hombres <- NULL
+Mujeres <- NULL
+Fecha <- NULL
+
+i <- 2003
+while(i <= 2013) {
+    General[i-2002] <- sum(subset(fuente, fecha == i & genero == "General")$casos)
+    Hombres[i-2002] <- sum(subset(fuente, fecha == i & genero =="Hombres")$casos)
+    Mujeres[i-2002] <- sum(subset(fuente, fecha == i & genero == "Mujeres")$casos)
+    Fecha[i-2002] <- i
+    Total <- Hombres + Mujeres
+    Diferencia <- Total - General
+    TablaFuenteFecha <- data.frame(Fecha, General, Hombres, Mujeres, Total, Diferencia)
+    i <- i+1
+}
+TablaFuenteFecha
+```
+
+Por mes.
+```{r TablaMesFecha, echo=FALSE}
+i <- 2003
+while(i <= 2013) {
+    General[i-2002] <- sum(subset(mes, fecha == i & genero == "General")$casos)
+    Hombres[i-2002] <- sum(subset(mes, fecha == i & genero =="Hombres")$casos)
+    Mujeres[i-2002] <- sum(subset(mes, fecha == i & genero == "Mujeres")$casos)
+    Fecha[i-2002] <- i
+    Total <- Hombres + Mujeres
+    Diferencia <- Total - General
+    TablaMesFecha <- data.frame(Fecha, General, Hombres, Mujeres, Total, Diferencia)
+    i <- i+1
+}
+TablaMesFecha
+```
+
+Por edad.
+```{r TablaEdadFecha, echo=FALSE}
+i <- 2003
+while(i <= 2013) {
+    General[i-2002] <- sum(subset(edad, fecha == i & genero == "General")$casos)
+    Hombres[i-2002] <- sum(subset(edad, fecha == i & genero =="Hombres")$casos)
+    Mujeres[i-2002] <- sum(subset(edad, fecha == i & genero == "Mujeres")$casos)
+    Fecha[i-2002] <- i
+    Total <- Hombres + Mujeres
+    Diferencia <- Total - General
+    TablaEdadFecha <- data.frame(Fecha, General, Hombres, Mujeres, Total, Diferencia)
+    i <- i+1
+}
+TablaEdadFecha
+```
+Nota: Total = Hombres + Mujeres  
+Nota: Diferencia = Total - General  
+
+En total, para cada genero y en cada anio, podemos observar que los datos son los mismos para cada una de las tablas (fuente, mes y edad). Y en un primer analisis nos estaria diciendo el total de hombres y mujeres reportados con un caso de diabetes melitus tipo II, asi como el total de personas reportadas en el periodo.
+
+```{r TotalesFecha, echo=FALSE}
+sapply(TablaFuenteFecha[,3:5], sum)
+sapply(TablaMesFecha[,3:5], sum)
+sapply(TablaEdadFecha[,3:5], sum)
+```
+
+#### V. Transformacion de los Datos.  
+####  
+Los datos que tenemos estan listos para comenzar el analisis exploratorio, simplemente extraeremos las variables de lo general a lo particular, dependiendo de la o las preguntas que se deban contestar.    
+ej. Casos de hombres reportados por el DIF.
+```{r EjemploSubset}
+hombresDif <- subset(fuente, genero == "Hombres" & fuente == "dif")$casos
+sum(hombresDif)
+```
+
+Sin embargo, en esta seccion se explica el proceso que se llevo a cabo para obtener los datos listos para utilizarse.  
+  
+##### V.I. Extraccion de los Datos. 
+#####  
+Primero, se llevo a cabo la extraccion de los datos desde la pagina de la Secretaria de Salud:  
+http://www.epidemiologia.salud.gob.mx/anuario/html/anuarios.html  
+Fueron descargados 99 archivos PDF que contienen la informacion de los casos de diabetes reportados para hombres, mujeres y a nivel general para los anios 2003 a 2013, dependiendo de la categoria seleccionada: Grupo de Edad, Tipo de Fuente y Mes.  
+
+##### V.II. Cambio de Formato (PDF a CSV).  
+#####  
+Para poder hacer uso de los datos extraidos, el formato de los archivos debe ser de texto plano, es decir, .txt o .csv. Para hacer el cambio de formato de PDF a CSV utilizo el programa TABULA (http://www.tabula.tecnology).  
+De los archivos PDF fueron transformados 99 archivos CSV, a cada archivo le fue asignado un nombre especificando el genero y el anio de los datos contenidos y despues guardados en carpetas dependiendo de la categoria de los datos(Tipo de Fuente, Grupo de Edad o Mes).  
+ej.  
+"PROYECTO/DATOS/BRUTOS/CSV/MES/G-2009" Se refiere al reporte general de 2009 por mes.  
+"PROYECTO/DATOS/BRUTOS/CSV/FUENTE/M-2003"  se refiere al reporte de mujeres en 2003 por tipo de fuente.  
+
+Esto con el fin de homologar los nombres y generar una secuencia para leer, procesar y compilar los datos mediante codigo R.  
+
+##### V.III. Limpieza y Compilacion de Datos.  
+#####  
+Mediante codigo R se realiza la lectura, limpieza y compilacion de los datos para, finalmente, generar tres nuevos archivos con la informacion lista para realizar los respectivos analisis.  
+
+La lectura consiste en cargar los 33 archivos csv de cada una de las categorias para hombres, mujeres y general durante el periodo 2003 a 2013.  
+
+La limpieza de los datos consiste en la homologacion de titulos, orden de las columnas, simplificar los nombres de las variables categoricas, como por ejemplo:  
+"San Luis Potos??" en "San Luis Potosi".  
+Tambien se quitan los espacios entre el numero de casos para que la variable pueda ser tomada en cuenta como numerica, ejemplo:  
+"2 45" a 245.  
+
+La compilacion de los datos es simplemente integrar los 33 archivos de cada categoria en una sola tabla.  
+
+Para mayor informacion al respecto se puede revisar el codigo en los siguientes archivos:    
+PROYECTO/CODIGO/PRELIMINAR/Limpieza.R  
+PROYECTO/CODIGO/PRELIMINAR/Limpieza.RData  
+  
+####  
+####  
+####  
+  
+#### VI. Analisis Exploratorio.  
+
+##### Analisis General.  
+#####  
+En genera, se ha registrado una mayor cantidad de diabetes melitus tipo II en mujeres (periodo 2003-2013)  
+```{r TablaGeneral, echo=FALSE}
+TablaGeneral <- TablaEdadFecha[,1:4]
+CasosTotales <- sum(TablaGeneral$General)
+CasosTotalesHombres <- sum(TablaGeneral$Hombres)
+CasosTotalesMujeres <- sum(TablaGeneral$Mujeres)
+TablaCasosTotales <- data.frame(CasosTotalesHombres, CasosTotalesMujeres, CasosTotales)
+names(TablaCasosTotales) <- c("Hombres", "Mujeres", "Total")
+row.names(TablaCasosTotales) <- c("Casos")
+TablaCasosTotales
+```
+  
+El porcentaje en hombres y en mujeres es el siguiente:  
+```{r TablaPorcentajes, echo=FALSE}
+CasosTotalesMujeresPorcentaje <- (CasosTotalesMujeres / CasosTotales) * 100
+CasosTotalesHombresPorcentaje <- (CasosTotalesHombres / CasosTotales) * 100
+TablaCasosPorcentaje <- data.frame(CasosTotalesHombresPorcentaje, CasosTotalesMujeresPorcentaje)
+names(TablaCasosPorcentaje) <- c("Hombres", "Mujeres")
+row.names(TablaCasosPorcentaje) <- c("%")
+TablaCasosPorcentaje
+```
+
+```{r ShareGenero, echo=FALSE}
+setwd(directorio)
+setwd("./GRAFICAS/EXPLORATORIAS")
+gGeneral <- qplot(genero, data = fuente, weight = casos, fill = genero, ylab = "casos")
+gGeneral + geom_bar()
+```
+
+En el anio 2003 se registro el menor numero de casos de diabetes en la poblacion general, mientras que 2011 fue el anio con mas casos.  
+En hombres, el menor numero se registro en 2003 y el mayor en 2009.  
+En mujeres, el menor numero se registro en 2013 y el mayor en 2011.  
+```{r MaxMinAnual, echo=FALSE}
+maxCasosAnual <- subset(TablaGeneral, TablaGeneral$General == max(TablaGeneral$General))$Fecha
+maxCasosAnualHombres <- subset(TablaGeneral, TablaGeneral$Hombres == max(TablaGeneral$Hombres))$Fecha
+maxCasosAnualMujeres <- subset(TablaGeneral, TablaGeneral$Mujeres == max(TablaGeneral$Mujeres))$Fecha
+minCasosAnual <- subset(TablaGeneral, TablaGeneral$General == min(TablaGeneral$General))$Fecha
+minCasosAnualHombres <- subset(TablaGeneral, TablaGeneral$Hombres == min(TablaGeneral$Hombres))$Fecha
+minCasosAnualMujeres <- subset(TablaGeneral, TablaGeneral$Mujeres == min(TablaGeneral$Mujeres))$Fecha
+Hombres <- c(minCasosAnualHombres, maxCasosAnualHombres)
+Mujeres <- c(minCasosAnualMujeres, maxCasosAnualMujeres)
+General <- c(minCasosAnual, maxCasosAnual)
+
+TablaMinMax <- data.frame(Hombres, Mujeres, General)
+row.names(TablaMinMax) <- c("min", "max")
+TablaMinMax
+```
+
+El promedio de casos registrados por anio en hombres, mujeres y a nivel general es el siguente:
+
+```{r PromedioAnual, echo=FALSE}
+promedioAnual <- mean(TablaGeneral$General)
+promedioAnualHombres <- mean(TablaGeneral$Hombres)
+promedioAnualMujeres <- mean(TablaGeneral$Mujeres)
+TablaPromedioAnual <- data.frame(promedioAnual, promedioAnualMujeres, promedioAnualHombres)
+names(TablaPromedioAnual) <- c("General", "Mujeres", "Hombres")
+TablaPromedioAnual
+```
+
+La tendencia a lo largo del tiempo en hombres y mujeres:
+
+```{r Tendencia, echo=FALSE, warning=FALSE, message=FALSE}
+l <- qplot(fecha, data = subset(fuente, genero!="General"), weight = casos, fill = genero, ylab = "casos")
+l + geom_bar(position="dodge")
+```
+  
+Podemos concluir, de este analisis, que la tendencia a nivel general es creciente.  
+
+
+Los estados que reportan el mayor y menor numero de casos son los siguientes:
+
+```{r MinMaxEstados, echo=FALSE}
+i  <- 1
+General <- NULL
+Hombres <- NULL
+Mujeres <- NULL
+Estado <- unique(mes$estado)
+while(i <= 32) {
+    General[i] <- sum(subset(mes, estado == Estado[i]  & genero == "General")$casos)
+    Hombres[i] <- sum(subset(mes, Estado[i] == estado & genero == "Hombres")$casos)
+    Mujeres[i] <- sum(subset(mes, Estado[i] == estado & genero == "Mujeres")$casos)
+    i <- i+1
+}
+TablaGeneralEstados <- data.frame(Estado, General, Hombres, Mujeres)
+maxEstado <- as.character(subset(TablaGeneralEstados, TablaGeneralEstados$General == max(TablaGeneralEstados$General))$Estado)
+minEstado <- as.character(subset(TablaGeneralEstados, TablaGeneralEstados$General == min(TablaGeneralEstados$General))$Estado)
+maxEstadoHombres <- as.character(subset(TablaGeneralEstados, TablaGeneralEstados$Hombres == max(TablaGeneralEstados$Hombres))$Estado)
+minEstadoHombres <- as.character(subset(TablaGeneralEstados, TablaGeneralEstados$Hombres == min(TablaGeneralEstados$Hombres))$Estado)
+maxEstadoMujeres <- as.character(subset(TablaGeneralEstados, TablaGeneralEstados$Mujeres == max(TablaGeneralEstados$Mujeres))$Estado)
+minEstadoMujeres <- as.character(subset(TablaGeneralEstados, TablaGeneralEstados$Mujeres == min(TablaGeneralEstados$Mujeres))$Estado)
+Hombres <- c(minEstadoHombres, maxEstadoHombres)
+Mujeres <- c(minEstadoMujeres, maxEstadoMujeres)
+General <- c(minEstado, maxEstado)
+TablaMinMaxEstados <- data.frame(Hombres, Mujeres, General)
+row.names(TablaMinMaxEstados) <- c("min", "max")
+TablaMinMaxEstados
+```
+
+El porcentaje de casos reportados por estado de la republica en el periodo 2003-2013:
+```{r, PorcentajeEstado, echo=FALSE}
+i  <- 1
+General <- NULL
+Hombres <- NULL
+Mujeres <- NULL
+while(i <= 32) {
+    General[i] <- sum(subset(mes, Estado[i] == estado & genero ==   "General")$casos) * 100 / CasosTotales
+    i <- i+1
+}
+TablaEstadosPorcentaje <- data.frame(Estado, General)
+TablaEstadosPorcentaje <- TablaEstadosPorcentaje[order(-TablaEstadosPorcentaje$General),]
+TablaEstadosPorcentaje
+```
+  
+```{r GraficaEstado, echo=FALSE}
+qplot(estado, data = subset(fuente, genero != "General"), weight = casos, ylab = "casos", fill = genero) + geom_bar(position = "dodge")
+```
+  
+En ningun estado es mayor el numero de casos en hombres que en mujeres.  
+
+##### Analisis por Tipo de Fuente
+#####  
+
+El mayor numero de casos reportados por las instituciones del pais se dio de manera siguente:
+```{r MaxMinFuenteGenero, echo=FALSE}
+General <- subset(fuente, genero == "General")
+subset(General, casos == max(General$casos))
+```
+```{r MaxMinFuenteHombres, echo=FALSE}
+Hombres <- subset(fuente, genero == "Hombres")
+subset(Hombres, casos == max(Hombres$casos))
+```
+```{r MaxMinFuenteMujeres, echo=FALSE}
+Mujeres <- subset(fuente, genero == "Mujeres")
+subset(Mujeres, casos == max(Mujeres$casos))
+```
+
+En general, el mayor numero de casos de diabetes han sido reportados por la Secretaria de Salud.  
+El porcentaje reportes de diabetes se distribuye por cada una de las instituciones de la siguiente manera:
+```{r TablaFuentePorcentje, echo=FALSE}
+i  <- 1
+General <- NULL
+Hombres <- NULL
+Mujeres <- NULL
+Fuente <- unique(fuente$fuente)
+while(i <= 9) {
+    General[i] <- sum(subset(fuente, Fuente[i] == fuente & genero ==   "General")$casos) * 100 / CasosTotales
+    i <- i+1
+}
+TablaFuentePorcentaje <- data.frame(Fuente, General)
+TablaFuentePorcentaje <- TablaFuentePorcentaje[order(-TablaFuentePorcentaje$General),]
+TablaFuentePorcentaje
+```
+
+```{r GraficaFuente, echo=FALSE}
+qplot(fuente, data = subset(fuente, genero != "General"), weight = casos, ylab = "casos", fill = genero) + geom_bar(position = "dodge")
+```
+  
+
+A nivel general, los casos tienen el siguiente comportamiento:
+```{r SummaryFuenteGeneral, echo=FALSE}
+summary(subset(fuente, genero == "General")$casos)
+```
+  
+Varianza.
+```{r VarianzaFuenteGeneral, echo=FALSE}
+var(subset(fuente, genero == "General")$casos)
+```
+Desviacion estandar.  
+```{r SdFuenteGeneral, echo=FALSE}
+sd(subset(fuente, genero == "General")$casos)
+```
+  
+Entonces podemos decir que, a nivel general los casos se encuentran cerca de la media. Sin embargo existen muchos casos atipicos.  
+```{r BoxPotFuenteGeneral, echo=FALSE}
+qplot(fuente, casos, data = subset(fuente, genero == "General")) + geom_boxplot()
+```
+  
+En hombres, el comportamiento es el siguinte:  
+```{r SummaryFuenteHombres, echo=FALSE}
+summary(subset(fuente, genero == "Hombres")$casos)
+```
+Varianza.
+```{r VarFuenteHombres, echo=FALSE}
+var(subset(fuente, genero == "Hombres")$casos)
+```
+
+Desviacion estandar.
+```{r SdFuenteHombres, echo=FALSE}
+sd(subset(fuente, genero == "Hombres")$casos)
+```
+
+```{r BoxPlotFuenteHombres, echo=FALSE}
+qplot(fuente, casos, data = subset(fuente, genero == "Hombres")) + geom_boxplot()
+```
+  
+La variacion es menor, asi como la media, en comparacion con el general. Sin embargo, el comportamiento de los casos en hombres en cada una de las instituciones es muy similar al general, es decir, los la mayoria de los datos se encuentran cerca de la media pero con gran cantidad de casos atipicos.  
+
+En mujeres:  
+```{r SummaryFuenteMujeres, echo=FALSE}
+summary(subset(fuente, genero == "Mujeres")$casos)
+```
+Varianza.
+```{r VarFuenteMujeres, echo=FALSE}
+var(subset(fuente, genero == "Mujeres")$casos)
+```
+
+Desviacion estandar.
+```{r SdFuenteMujeres, echo=FALSE}
+sd(subset(fuente, genero == "Mujeres")$casos)
+```
+
+```{r BoxPlotFuenteMujeres, echo=FALSE}
+qplot(fuente, casos, data = subset(fuente, genero == "Mujeres")) + geom_boxplot()
+```
+  
+Por ultimo, se presenta el promedio de casos anual en cada una de las instituciones:
+```{r PromedioAnualFuente, echo=FALSE}
+i  <- 1
+General <- NULL
+Hombres <- NULL
+Mujeres <- NULL
+Fuente <- unique(fuente$fuente)
+while(i <= 9) {
+    General[i] <- mean(subset(fuente, Fuente[i] == fuente & genero ==   "General")$casos)
+    i <- i+1
+}
+TablaFuentePromedio <- data.frame(Fuente, General)
+TablaFuentePromedio <- TablaFuentePromedio[order(-TablaFuentePromedio$General),]
+TablaFuentePromedio
+```
+  
+##### Analisis por Mes
+#####  
+
+El mayor numero de casos reportados ha sido en el mes de:
+```{r MaxMinMesGenero, echo=FALSE}
+General <- subset(mes, genero == "General")
+subset(General, casos == max(General$casos))
+```
+```{r MaxMinMesHombres, echo=FALSE}
+Hombres <- subset(mes, genero == "Hombres")
+subset(Hombres, casos == max(Hombres$casos))
+```
+```{r MaxMinMesMujeres, echo=FALSE}
+Mujeres <- subset(mes, genero == "Mujeres")
+subset(Mujeres, casos == max(Mujeres$casos))
+```
+  
+El porcentaje reportes de diabetes se distribuye por cada mes de la siguiente manera:
+```{r TablaMesPorcentje, echo=FALSE}
+i  <- 1
+General <- NULL
+Hombres <- NULL
+Mujeres <- NULL
+Mes <- unique(mes$mes)
+while(i <= 12) {
+    General[i] <- sum(subset(mes, Mes[i] == mes & genero == "General")$casos) * 100 / CasosTotales
+    i <- i+1
+}
+TablaMesPorcentaje <- data.frame(Mes, General)
+TablaMesPorcentaje <- TablaMesPorcentaje[order(-TablaMesPorcentaje$General),]
+TablaMesPorcentaje
+```
+
+```{r GraficaMes, echo=FALSE}
+qplot(mes, data = subset(mes, genero != "General"), weight = casos, ylab = "casos", fill = genero) + geom_bar(position = "dodge")
+```
+  
+
+A nivel general, los casos tienen el siguiente comportamiento mensualmente:
+```{r SummaryMesGeneral, echo=FALSE}
+summary(subset(mes, genero == "General")$casos)
+```
+  
+Varianza.
+```{r VarianzaMesGeneral, echo=FALSE}
+var(subset(mes, genero == "General")$casos)
+```
+Desviacion estandar.
+```{r SdMesGeneral, echo=FALSE}
+sd(subset(mes, genero == "General")$casos)
+```
+  
+
+```{r BoxPotMesGeneral, echo=FALSE}
+qplot(mes, casos, data = subset(mes, genero == "General")) + geom_boxplot()
+```
+  
+En hombres, el comportamiento es el siguinte:  
+```{r SummaryMesHombres, echo=FALSE}
+summary(subset(mes, genero == "Hombres")$casos)
+```
+Varianza.
+```{r VarMesHombres, echo=FALSE}
+var(subset(mes, genero == "Hombres")$casos)
+```
+
+Desviacion estandar.
+```{r SdMesHombres, echo=FALSE}
+sd(subset(mes, genero == "Hombres")$casos)
+```
+
+```{r BoxPlotMesHombres, echo=FALSE}
+qplot(mes, casos, data = subset(mes, genero == "Hombres")) + geom_boxplot()
+```
+  
+
+En mujeres:  
+```{r SummaryMesMujeres, echo=FALSE}
+summary(subset(mes, genero == "Mujeres")$casos)
+```
+Varianza.
+```{r VarMesMujeres, echo=FALSE}
+var(subset(mes, genero == "Mujeres")$casos)
+```
+
+Desviacion estandar.
+```{r SdMesMujeres, echo=FALSE}
+sd(subset(mes, genero == "Mujeres")$casos)
+```
+
+```{r BoxPlotMesMujeres, echo=FALSE}
+qplot(mes, casos, data = subset(mes, genero == "Mujeres")) + geom_boxplot()
+```
+  
+Por ultimo, se presenta el promedio mensual:
+```{r PromedioMensual, echo=FALSE}
+i  <- 1
+General <- NULL
+Hombres <- NULL
+Mujeres <- NULL
+Mes <- unique(mes$mes)
+while(i <= 12) {
+    General[i] <- mean(subset(mes, Mes[i] == mes & genero ==   "General")$casos)
+    i <- i+1
+}
+TablaMesPromedio <- data.frame(Mes, General)
+TablaMesPromedio <- TablaMesPromedio[order(-TablaMesPromedio$General),]
+TablaMesPromedio
+```
+  
+##### Analisis por Edad
+#####  
+
+El mayor numero de casos reportados por grupo de edad es::
+```{r MaxMinEdadGenero, echo=FALSE}
+General <- subset(edad, genero == "General")
+subset(General, casos == max(General$casos))
+```
+```{r MaxMinEdadHombres, echo=FALSE}
+Hombres <- subset(edad, genero == "Hombres")
+subset(Hombres, casos == max(Hombres$casos))
+```
+```{r MaxMinEdadMujeres, echo=FALSE}
+Mujeres <- subset(edad, genero == "Mujeres")
+subset(Mujeres, casos == max(Mujeres$casos))
+```
+  
+El porcentaje reportes de diabetes se distribuye por cada grupo de edad de la siguiente manera:
+```{r TablaEdadPorcentje, echo=FALSE}
+i  <- 1
+General <- NULL
+Hombres <- NULL
+Mujeres <- NULL
+Edad <- unique(edad$edad)
+while(i <= 12) {
+    General[i] <- sum(subset(edad, Edad[i] == edad & genero == "General")$casos) * 100 / CasosTotales
+    i <- i+1
+}
+TablaEdadPorcentaje <- data.frame(Edad, General)
+TablaEdadPorcentaje <- TablaEdadPorcentaje[order(-TablaEdadPorcentaje$General),]
+TablaEdadPorcentaje
+```
+
+```{r GraficaEdad, echo=FALSE}
+qplot(edad, data = subset(edad, genero != "General"), weight = casos, ylab = "casos", fill = genero) + geom_bar(position = "dodge")
+```
+  
+
+A nivel general, los casos tienen el siguiente comportamiento por grupo de esdad:
+```{r SummaryEdadGeneral, echo=FALSE}
+summary(subset(edad, genero == "General")$casos)
+```
+  
+Varianza.
+```{r VarianzaEdadGeneral, echo=FALSE}
+var(subset(edad, genero == "General")$casos)
+```
+Desviacion estandar.
+```{r SdEdadGeneral, echo=FALSE}
+sd(subset(edad, genero == "General")$casos)
+```
+  
+
+```{r BoxPotEdadGeneral, echo=FALSE}
+qplot(edad, casos, data = subset(edad, genero == "General")) + geom_boxplot()
+```
+  
+En hombres, el comportamiento es el siguinte:  
+```{r SummaryEdadHombres, echo=FALSE}
+summary(subset(edad, genero == "Hombres")$casos)
+```
+Varianza.
+```{r VarEdadHombres, echo=FALSE}
+var(subset(edad, genero == "Hombres")$casos)
+```
+
+Desviacion estandar.
+```{r SdEdadHombres, echo=FALSE}
+sd(subset(edad, genero == "Hombres")$casos)
+```
+
+```{r BoxPlotEdadHombres, echo=FALSE}
+qplot(edad, casos, data = subset(edad, genero == "Hombres")) + geom_boxplot()
+```
+  
+
+En mujeres:  
+```{r SummaryEdadMujeres, echo=FALSE}
+summary(subset(edad, genero == "Mujeres")$casos)
+```
+Varianza.
+```{r VarEdadMujeres, echo=FALSE}
+var(subset(edad, genero == "Mujeres")$casos)
+```
+
+Desviacion estandar.
+```{r SdEdadMujeres, echo=FALSE}
+sd(subset(edad, genero == "Mujeres")$casos)
+```
+
+```{r BoxPlotEdadMujeres, echo=FALSE}
+qplot(edad, casos, data = subset(edad, genero == "Mujeres")) + geom_boxplot()
+```
+  
+Por ultimo, se presenta el promedio por grupo de edad:
+```{r PromedioEdad, echo=FALSE}
+i  <- 1
+General <- NULL
+Hombres <- NULL
+Mujeres <- NULL
+Edad <- unique(edad$edad)
+while(i <= 12) {
+    General[i] <- mean(subset(edad, Edad[i] == edad & genero ==   "General")$casos)
+    i <- i+1
+}
+TablaEdadPromedio <- data.frame(Edad, General)
+TablaEdadPromedio <- TablaEdadPromedio[order(-TablaEdadPromedio$General),]
+TablaEdadPromedio
+```
+
+###  
+###  
+###  
+###  
+###  
+###  
+  
+#### VII. Conclusiones
+
+A nivel general, podemos concluir que, existe una tendencia creciente en el numero de casos reportados de diabetes, tanto para hombres como para ujeres. Aunque, el menor numero de casos en el periodo 2003-2013 se haya registrade en el ultimo anio (para mujeres).  
+Claramente podemos concluir que, las mujeres tienen una mayor propencion la diabetes melitus tipo II tanto a nivel general como en cada una de las categorias, tipo de fuente, mes y grupo de edad.  
+Siendo el estado de Mexico, el IMSS.ORD, el mes de marzo y el grupo de edad de 50 a 59 anios las categorias con mayor numero de casos de diabetes, al igual que el mayor promedio. Sin embargo, seria dificil dar una aproximacion basandonos solo en los promedios ya que los datos tienen una variacion muy alta, lo cual se representa en los casos atipicos a lo largo del analisis.  
+Una de las recomendaciones, para analisis posteriores, seria comparar los resultados actuales con los resultados de la misma base de datos pero eliminando los casos atipicos.  
+Tambien seria de gran interes conocer la relacion existente entre los casos de diabetes de hombres y mujeres en cada una de las categorias.
