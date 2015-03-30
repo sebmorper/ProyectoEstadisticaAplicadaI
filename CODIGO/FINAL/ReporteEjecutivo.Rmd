@@ -1,7 +1,7 @@
 ---
 title: "Diabetes Melitus Tipo II"
-author: "Sebastian Morales Peralta 000124317"
-date: "27 de marzo de 2015"
+author: "Sebasti??n Morales Peralta 000124317"
+date: "29 de marzo de 2015"
 output: pdf_document
 ---
 
@@ -32,7 +32,7 @@ edad <- edad[,2:6]
 
 ```
 
-### REPORTE TECNICO  
+### REPORTE EJECUTIVO  
 
 #### I. Introduccion 
 #####  
@@ -81,71 +81,6 @@ El principal objetivo de este reporte es presentar el fenomeno de la diabetes me
 
 Cada una de estas preguntas ser respondida mediante un analisis exploratorio, el cual nos permita entender el comportamiento de los casos de diabetes en la poblacion mexicana a lo largo del tiempo, por lo que se incluiran datos de promedios y varianzas para comenzar a  "visualizar" que tan solido sera el analisis en la etapa inferencial (no presentada en el actual reporte).  
 
-
-#### III. Obtencion y Descripcion de los Datos.  
-####  
-Una base de datos "ideal" que podria responder todas las preguntas de manera puntual seria aquella que contuviera los siguientes campos o variables:
-```{r BaseIdeal, echo=FALSE}
-c("estado", "genero", "fecha", "mes", "fuente", "edad", "casos")
-```
-En la cual, las variables serian de los siguientes tipos y escalas:  
-ESTADO.  
-Esta variable es de tipo categorica y da cuenta de cada uno de los estados de la republica mexicana.
-```{r Estados, echo=FALSE}
-unique(as.character(fuente$estado))
-```
-GENERO.  
-El sexo de de los individuos reportados con diabetes melitus tipo II. Es una variable categorica.
-```{r Genero, echo=FALSE}
-unique(as.character(fuente$genero))
-```
-FECHA.  
-Se refiere al anio en el que se presentaron los casos de diabetes, es una variable numerica, de tipo entero, que se encuantra entre los rangos 2003 y 2013.
-```{r Fecha, echo=FALSE}
-unique(fuente$fecha)
-```
-MES.  
-El mes del anio en el que se reportaron los casos, es una variable de tipo caracter que contiene cada uno de los meses del anio.
-```{r Mes, echo=FALSE}
-unique(as.character(mes$mes))
-```
-FUENTE.  
-Es una variable categorica que permite saber el numero de casos reportados por algunas instituciones del pais.
-```{r Fuente, echo=FALSE}
-unique(as.character(fuente$fuente))
-```
-EDAD.  
-Variable categorica que agrupa distintos rangos de edades que presentan casos de diabetes. En este caso, la categoria "ign" se refiere a todas aquellas personas que no fueron asignadas a algun grupo de edad.
-```{r Edad, echo=FALSE}
-unique(as.character(edad$edad))
-```
-CASOS.  
-Es la variable dependiente, es de tipo numerica y se refiere al numero de personas que reflejan un caso de diabetes melitus tipo II (no insulinodependiente). Para este reporte, la variable se encuentra en los siguentes rangos:
-```{r MaxMinCasos, echo=FALSE}
-max <- max(fuente$casos, mes$casos, edad$casos)
-min <- min(fuente$casos)
-casosMaxMin <- data.frame(min, max)
-row.names(casosMaxMin) <- c("casos")
-casosMaxMin
-```
-Este reporte contiene todas estas variables, sin embargo, no se tienen integradas en una sola base de datos, por lo que no es posible dar respuestas tan especificas como por ejemplo:  
-Cuantos casos de hombres con diabetes se reportaron en abril de 2008 en el issste en Durango?  
-Ya que la informacion actual puede dar cuenta de los hombres reportados en abril de 2008 y los hombres reportados en el 2008 por parte del issste pero a lo largo de todo el anio.  
-ej.
-```{r Ejemplo1, echo=FALSE}
-subset(mes, genero == "Hombres" & fecha == 2008 & mes == "abr" & estado == "Durango")
-
-subset(fuente, genero == "Hombres" & fecha == 2008 & fuente == "issste" & estado == "Durango")
-```
-Por lo tanto, utilizaremos las tres bases por separado (fuente, mes, edad) para responder de las preguntas mas generales hasta la mas particular que sea posible.  
-
-
-#### IV Calidad de los Datos.  
-####  
-En esta seccion se mostrara la calidad de los datos presentados, es decir, que los datos de cada una de nuestras tablas (fuente, mes, edad) sean los mismos para cada anio, genero, y estado. Esto con el fin de corrobrar que los datos que estamos utilizando coinciden, independientemente de la tabla que estemos utilizando, lo cual nos permite tener solidez en el analisis comparativo.  
-
-Primero mostraremos que, para cada tabla, los datos son los mismos para cada anio y cada genero.  
-Por fuente.  
 ```{r TablaFuenteFecha, echo=FALSE}
 General <- NULL
 Hombres <- NULL
@@ -163,10 +98,9 @@ while(i <= 2013) {
     TablaFuenteFecha <- data.frame(Fecha, General, Hombres, Mujeres, Total, Diferencia)
     i <- i+1
 }
-TablaFuenteFecha
 ```
 
-Por mes.
+
 ```{r TablaMesFecha, echo=FALSE}
 i <- 2003
 while(i <= 2013) {
@@ -179,10 +113,9 @@ while(i <= 2013) {
     TablaMesFecha <- data.frame(Fecha, General, Hombres, Mujeres, Total, Diferencia)
     i <- i+1
 }
-TablaMesFecha
 ```
 
-Por edad.
+
 ```{r TablaEdadFecha, echo=FALSE}
 i <- 2003
 while(i <= 2013) {
@@ -195,68 +128,9 @@ while(i <= 2013) {
     TablaEdadFecha <- data.frame(Fecha, General, Hombres, Mujeres, Total, Diferencia)
     i <- i+1
 }
-TablaEdadFecha
+
 ```
-Nota: Total = Hombres + Mujeres  
-Nota: Diferencia = Total - General  
-
-En total, para cada genero y en cada anio, podemos observar que los datos son los mismos para cada una de las tablas (fuente, mes y edad). Y en un primer analisis nos estaria diciendo el total de hombres y mujeres reportados con un caso de diabetes melitus tipo II, asi como el total de personas reportadas en el periodo.
-
-```{r TotalesFecha, echo=FALSE}
-sapply(TablaFuenteFecha[,3:5], sum)
-sapply(TablaMesFecha[,3:5], sum)
-sapply(TablaEdadFecha[,3:5], sum)
-```
-
-#### V. Transformacion de los Datos.  
-####  
-Los datos que tenemos estan listos para comenzar el analisis exploratorio, simplemente extraeremos las variables de lo general a lo particular, dependiendo de la o las preguntas que se deban contestar.    
-ej. Casos de hombres reportados por el DIF.
-```{r EjemploSubset}
-hombresDif <- subset(fuente, genero == "Hombres" & fuente == "dif")$casos
-sum(hombresDif)
-```
-
-Sin embargo, en esta seccion se explica el proceso que se llevo a cabo para obtener los datos listos para utilizarse.  
-  
-##### V.I. Extraccion de los Datos. 
-#####  
-Primero, se llevo a cabo la extraccion de los datos desde la pagina de la Secretaria de Salud:  
-http://www.epidemiologia.salud.gob.mx/anuario/html/anuarios.html  
-Fueron descargados 99 archivos PDF que contienen la informacion de los casos de diabetes reportados para hombres, mujeres y a nivel general para los anios 2003 a 2013, dependiendo de la categoria seleccionada: Grupo de Edad, Tipo de Fuente y Mes.  
-
-##### V.II. Cambio de Formato (PDF a CSV).  
-#####  
-Para poder hacer uso de los datos extraidos, el formato de los archivos debe ser de texto plano, es decir, .txt o .csv. Para hacer el cambio de formato de PDF a CSV utilizo el programa TABULA (http://www.tabula.tecnology).  
-De los archivos PDF fueron transformados 99 archivos CSV, a cada archivo le fue asignado un nombre especificando el genero y el anio de los datos contenidos y despues guardados en carpetas dependiendo de la categoria de los datos(Tipo de Fuente, Grupo de Edad o Mes).  
-ej.  
-"PROYECTO/DATOS/BRUTOS/CSV/MES/G-2009" Se refiere al reporte general de 2009 por mes.  
-"PROYECTO/DATOS/BRUTOS/CSV/FUENTE/M-2003"  se refiere al reporte de mujeres en 2003 por tipo de fuente.  
-
-Esto con el fin de homologar los nombres y generar una secuencia para leer, procesar y compilar los datos mediante codigo R.  
-
-##### V.III. Limpieza y Compilacion de Datos.  
-#####  
-Mediante codigo R se realiza la lectura, limpieza y compilacion de los datos para, finalmente, generar tres nuevos archivos con la informacion lista para realizar los respectivos analisis.  
-
-La lectura consiste en cargar los 33 archivos csv de cada una de las categorias para hombres, mujeres y general durante el periodo 2003 a 2013.  
-
-La limpieza de los datos consiste en la homologacion de titulos, orden de las columnas, simplificar los nombres de las variables categoricas, como por ejemplo:  
-"San Luis Potos??" en "San Luis Potosi".  
-Tambien se quitan los espacios entre el numero de casos para que la variable pueda ser tomada en cuenta como numerica, ejemplo:  
-"2 45" a 245.  
-
-La compilacion de los datos es simplemente integrar los 33 archivos de cada categoria en una sola tabla.  
-
-Para mayor informacion al respecto se puede revisar el codigo en los siguientes archivos:    
-PROYECTO/CODIGO/PRELIMINAR/Limpieza.R  
-PROYECTO/CODIGO/PRELIMINAR/Limpieza.RData  
-  
-####  
-####  
-####  
-  
-#### VI. Analisis Exploratorio.  
+#### III. Analisis Exploratorio.  
 
 ##### Analisis General.  
 #####  
@@ -381,21 +255,6 @@ row.names(TablaMinMaxEstados) <- c("min", "max")
 TablaMinMaxEstados
 ```
 
-El porcentaje de casos reportados por estado de la republica en el periodo 2003-2013:
-```{r, PorcentajeEstado, echo=FALSE}
-i  <- 1
-General <- NULL
-Hombres <- NULL
-Mujeres <- NULL
-while(i <= 32) {
-    General[i] <- sum(subset(mes, Estado[i] == estado & genero ==   "General")$casos) * 100 / CasosTotales
-    i <- i+1
-}
-TablaEstadosPorcentaje <- data.frame(Estado, General)
-TablaEstadosPorcentaje <- TablaEstadosPorcentaje[order(-TablaEstadosPorcentaje$General),]
-TablaEstadosPorcentaje
-```
-  
 ```{r GraficaEstado, echo=FALSE, message=FALSE}
 GraficaEstado <- qplot(estado, data = subset(fuente, genero != "General"), weight = casos, ylab = "casos", fill = genero) + geom_bar(position = "dodge")
 
@@ -909,7 +768,7 @@ TablaEdadPromedio
 ###  
 ###   
   
-#### VII. Conclusiones
+#### IV. Conclusiones
 
 A nivel general, podemos concluir que, existe una tendencia creciente en el numero de casos reportados de diabetes, tanto para hombres como para mujeres. Aunque, el menor numero de casos en el periodo 2003-2013 se haya registrade en el ultimo anio (para mujeres).  
 Claramente podemos concluir que, las mujeres tienen una mayor propencion la diabetes melitus tipo II tanto a nivel general como en cada una de las categorias, tipo de fuente, mes y grupo de edad.  
